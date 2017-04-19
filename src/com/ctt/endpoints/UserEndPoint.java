@@ -1,5 +1,7 @@
 package com.ctt.endpoints;
 
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -29,11 +31,9 @@ public class UserEndPoint {
 	}
 	@PUT
 	@Authentication(userAccessLevel=UserAccessLevel.READ_WRITE)
-	public Response updateUser(UserEntity user)throws Exception
+	public Response updateUser(Map<String,Object> updateData,@Context HttpServletRequest request)throws Exception
 	{
-		System.out.println("put method");
-		//Exception occurs here
-		System.out.println(user.getFirstName()+user.getLastName());
-		return Utils.response(Response.Status.OK,Utils.objectToJson(new UserServices().updateUser(user)));
+		String clientToken=request.getHeader("Authorization");
+		return Utils.response(Response.Status.OK,Utils.objectToJson(new UserServices().updateUser(clientToken,updateData)));
 	}
 }
