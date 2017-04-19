@@ -8,6 +8,7 @@ import javax.ws.rs.core.Application;
 import org.jboss.resteasy.plugins.interceptors.CorsFilter;
 
 import com.ctt.ExceptionsHandling.ExceptionHandler;
+import com.ctt.endpoints.LoginLogoutEndPoint;
 import com.ctt.endpoints.UserEndPoint;
 import com.ctt.filters.OPTIONSMockFilter;
 import com.ctt.services.filters.RegisterAuthenticationFilter;
@@ -31,6 +32,7 @@ public class ConveyToThemApplication extends Application
 
         //Endpoints
         singletons.add(new UserEndPoint());
+        singletons.add(new LoginLogoutEndPoint());
         singletons.add(new ExceptionHandler());
         //Filters
         classes.add(OPTIONSMockFilter.class);
