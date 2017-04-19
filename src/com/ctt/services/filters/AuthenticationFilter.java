@@ -39,24 +39,28 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
 	private void checkAuthenticationAndPermission(ContainerRequestContext requestContext) throws IOException {
 		System.out.println("Inside checkAuthenticationAndPermission method");
-
-		if (userRoll != UserAccessLevel.NO_LIMITATION) {
-			doLimitationsCheck(requestContext);
-		}
-
+		doHeaderCheck(requestContext);
 	}
-
-	private void doLimitationsCheck(ContainerRequestContext requestContext) throws IOException {
-		System.out.println("Inside doLimitationCheck method with the user access level: "+userRoll);
+	private void doHeaderCheck(ContainerRequestContext requestContext) throws IOException{
 		if (!requestContext.getHeaders().containsKey(AUTH_HEADER)) {
-        	System.out.println("Aborting in doLimitationsCheck because(No Authorization Header Present) ACCESS_DENIED");
         	requestContext.abortWith(ACCESS_DENIED);
 			return;
 		} else if (!new CacheUtil().isKeyExists(requestContext.getHeaderString("Authorization"))) {
-        	System.out.println("Aborting in doLimitationsCheck(Authorization Key is not present in cache) because ACCESS_DENIED");
         	requestContext.abortWith(ACCESS_DENIED);
 			return;
-		} else if (userRoll == UserAccessLevel.READ_WRITE) {
+		} 
+		if (userRoll != UserAccessLevel.NO_LIMITATION) {
+			doReadAccessCheck(requestContext);
+		}
+	
+	}
+
+	private void doReadAccessCheck(ContainerRequestContext requestContext) throws IOException {
+		if (userRoll == UserAccessLevel.READ_ONLY) {
+			//do the location check here
+			return;
+		}
+		else if (userRoll == UserAccessLevel.READ_WRITE) {
 			doReadWriteAccessCheck(requestContext);
 		}
 	}
@@ -65,34 +69,16 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 		System.out.println("inside doReadWriteAccessCheck method");
 		CacheUtil cacheUtil = new CacheUtil();
 		UserEntity user=(UserEntity)cacheUtil.getcache(requestContext.getHeaders().get(AUTH_HEADER).get(0));
-		//System.out.println("doReadWriteAccessCheck: "+user.getFirstName()+user.getLastName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
         IOUtils.copy(requestContext.getEntityStream(), baos);
         byte[] jsonBytes = baos.toByteArray();
         String json = new String(jsonBytes, "UTF-8");
-        //again setting the entities in the requestContext
         requestContext.setEntityStream(new ByteArrayInputStream(jsonBytes));
-        //System.out.println("json string:"+json);
         UserEntity updatingUser=(UserEntity)Utils.jsonToObject(json,UserEntity.class);
-       /* Object object = Utils.jsonToObject(json,Object.class);
-        System.out.println("After json to object");
-        if(object instanceof UserEntity){
-        	System.out.println("it is an instance of userentity");
-        	UserEntity updatingUser=(UserEntity)object;
-        if(!user.getUserName().equals(updatingUser.getUserName()))
-		{
-        	System.out.println("Aborting in doReadWirteAccessCheck because Read_write ACCESS_DENIED");
-        	requestContext.abortWith(ACCESS_DENIED);
-		}
-        System.out.println("End of doReadWriteAccessCheck");
-        }*/
-        //System.out.println("name: "+updatingUser.getFirstName()+updatingUser.getLastName());
-        //System.out.println("UserName1:"+user.getUserName()+"UserName2:"+updatingUser.getUserName());
         if(!user.getUserName().equals(updatingUser.getUserName()))
       		{
               	System.out.println("Aborting in doReadWirteAccessCheck because Read_write ACCESS_DENIED");
               	requestContext.abortWith(ACCESS_DENIED);
       		}
-    //    System.out.println("End of doReadWriteAccessCheck");
-	}
+    }
 }
